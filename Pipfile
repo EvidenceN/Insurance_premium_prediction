@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 pandas = "*"
 pandas-profiling = {extras = ["html", "notebook"],version = "*"}
+numba = "*"
+seaborn = "*"
 
 [requires]
 python_version = "3.7"

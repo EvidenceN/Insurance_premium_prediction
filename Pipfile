@@ -10,6 +10,8 @@ pandas = "*"
 pandas-profiling = {extras = ["html", "notebook"],version = "*"}
 numba = "*"
 seaborn = "*"
+scikit-learn = "*"
+category-encoders = "*"
 
 [requires]
 python_version = "3.7"

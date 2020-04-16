@@ -12,6 +12,7 @@ numba = "*"
 seaborn = "*"
 scikit-learn = "*"
 category-encoders = "*"
+plotly = "*"
 
 [requires]
 python_version = "3.7"

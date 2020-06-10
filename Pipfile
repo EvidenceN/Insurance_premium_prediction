@@ -15,6 +15,7 @@ category-encoders = "*"
 plotly = "*"
 jupyter = "*"
 xgboost = "*"
+shap = "*"
 
 [requires]
 python_version = "3.7"

@@ -45,9 +45,9 @@ def Wrangle(dataframe):
     data["activation_date"] = pd.to_datetime(data["Effective To Date"], 
                                                   infer_datetime_format = True)
     
-    data = data.drop(columns = ["Customer", 
-                                          "Effective To Date", 
-                                          'Response'])
+    data = data.drop(columns = ["Customer",
+                                "Effective To Date",
+                                'Response'])
     
     return data
 
@@ -261,7 +261,11 @@ def change_name(train_encoded, test_encoded, val_encoded):
          "EmploymentStatus_Unemployed": "Unemployed",
          "EmploymentStatus_Disabled": "Disabled", 
          "EmploymentStatus_Retired": "Retired",
-         "EmploymentStatus_Medical Leave": "Medical_Leave"}
+         "EmploymentStatus_Medical Leave": "Medical_Leave",
+         'Renew Offer Type_Offer2': 'Renew offer 1',
+         'Renew Offer Type_Offer1': 'Renew offer 2',
+         'Renew Offer Type_Offer3': 'Renew offer 3',
+         'Renew Offer Type_Offer4': 'Renew offer 4'}
     
     train = train.rename(columns = columns_to_rename)
     test = test.rename(columns = columns_to_rename)
@@ -281,262 +285,91 @@ train_encoded.head()
 train2.head()
 
 
-# rounding various series in our dataframe. 
-# columns to round - lifetime value, monthly premium, total claim amount
+def round_values(train, test, val):
+    
+    """
+    A function that will round the values in some columns
+    
+    provide the dataset, and the columns below will be rounded
+    """
+    
+    # creating a copy of the dataset. 
+    train_round = train.copy()
+    test_round = test.copy()
+    val_round = val.copy()
+    
+    train_round = train_round.round(
+        {"Customer Lifetime Value": 2,
+         "Total Claim Amount": 2})
+    
+    test_round = test_round.round(
+        {"Customer Lifetime Value": 2,
+         "Total Claim Amount": 2})
+    
+    val_round = val_round.round(
+        {"Customer Lifetime Value": 2,
+         "Total Claim Amount": 2})
+    
+    return train_round, test_round, val_round
+    
 
-train_encoded = train_encoded.round({"Customer Lifetime Value": 2, "Total Claim Amount": 2})
-test_encoded = test_encoded.round({"Customer Lifetime Value": 2, "Total Claim Amount": 2})
-train = train.round({"Customer Lifetime Value": 2, "Total Claim Amount": 2})
-test = test.round({"Customer Lifetime Value": 2, "Total Claim Amount": 2})
 
+train2, test2, val2 = round_values(train2, test2, val2)
 
-train_encoded.head()
 
+train2.head()
 
-train_encoded["EmploymentStatus"].describe()
 
+## customer lifetime value and insurance premium as 
+# target y variables. 
 
-train_encoded["EmploymentStatus"].value_counts()
 
+def x_y(train):
+    
+    """
+    Function to split dataframe into x_values and y_values
+    
+    Define x variables and y variables"""
+    
+    y = train['Monthly Premium Auto']
+    y2 = train['Customer Lifetime Value']
+    
+    # after initial models, these are the columns that has the 
+    # most impact in predicting insurance premium and customer
+    # lifetime value to insurance company
+    
+    important_columns = ["Luxury SUV", "Luxury Car", "Coverage", 
+                    "Sports Car", "Two Door", "Four Door", 
+                    "Months Since Policy Inception",
+                    "Income", "Months Since Last Claim",
+                    "Number of Policies", "Education", 
+                    "Number of Open Complaints"]
+    
+    x = train[important_columns].copy()
+    
+    return y, y2, x
+    
 
-# Encode employment status column with one hot encoding
-# experiment with target encoding later. 
-# order doesn't matter in this column situation
 
-employment_encoder = ce.OneHotEncoder(cols = "EmploymentStatus", use_cat_names=True)
+x_train.head()
 
-train_encoded = employment_encoder.fit_transform(train_encoded)
-test_encoded = employment_encoder.transform(test_encoded)
 
+# Training Data
 
-train_encoded.head()
+y_train, y2_train, x_train = x_y(train2)
 
 
-test_encoded.head()
+x_train.head()
 
 
-# changing employement status column names on train dataset
+# Testing Data
 
-train_encoded = train_encoded.rename(columns = {"EmploymentStatus_Employed": "Employed", "EmploymentStatus_Unemployed": "Unemployed",
-                                      "EmploymentStatus_Disabled": "Disabled", "EmploymentStatus_Retired": "Retired",
-                                      "EmploymentStatus_Medical Leave": "Medical_Leave"})
+y_test, y2_test, x_test = x_y(test2)
 
 
-train_encoded.head()
+# Validation Data
 
+y_val, y2_val, x_val = x_y(val2)
 
-# changing employement status column names on test dataset
 
-test_encoded = test_encoded.rename(columns = {"EmploymentStatus_Employed": "Employed", "EmploymentStatus_Unemployed": "Unemployed",
-                                      "EmploymentStatus_Disabled": "Disabled", "EmploymentStatus_Retired": "Retired",
-                                      "EmploymentStatus_Medical Leave": "Medical_Leave"})
 
-
-# encode gender to be numerical. 
-
-train['Gender'].value_counts()
-
-
-# Encode gender column with one hot encoding
-# order doesn't matter in this column situation
-
-gender_encoder = ce.OneHotEncoder(cols = "Gender", use_cat_names=True)
-
-train_encoded = gender_encoder.fit_transform(train_encoded)
-test_encoded = gender_encoder.transform(test_encoded)
-
-
-train_encoded.head()
-
-
-# change gender column names on train and test dataset. 
-
-train_encoded = train_encoded.rename(columns = {"Gender_M": "Male", "Gender_F": "Female"})
-test_encoded = test_encoded.rename(columns = {"Gender_M": "Male", "Gender_F": "Female"})
-
-
-train_encoded.head()
-
-
-train["Location Code"].describe()
-
-
-train["Location Code"].value_counts()
-
-
-# Encode location code column with one hot encoding
-# order doesn't matter in this column situation
-
-location_encoder = ce.OneHotEncoder(cols = "Location Code", use_cat_names=True)
-
-train_encoded = location_encoder.fit_transform(train_encoded)
-test_encoded = location_encoder.transform(test_encoded)
-
-
-train_encoded.head()
-
-
-# change gender column names on train and test dataset. 
-
-train_encoded = train_encoded.rename(columns = {"Location Code_Urban": "Urban", "Location Code_Rural": "Rural", 
-                                                "Location Code_Suburban":"Suburban"})
-test_encoded = test_encoded.rename(columns = {"Location Code_Urban": "Urban", "Location Code_Rural": "Rural", 
-                                                "Location Code_Suburban":"Suburban"})
-
-
-train_encoded.head()
-
-
-# change to integer these columns 
-
-# marital status, sales_channel, state, vehicle size, type of policy, vehicle class, 
-# 
-
-
-train['Vehicle Size'].value_counts()
-
-
-train['Policy'].describe()
-
-
-# policy could have an order, but that order could also introduce bias, so, 
-# one hot encoding was used for policy. 
-
-# one hot encoding columns
-columns_to_encode = ["Marital Status", "Policy Type", "Policy", "Sales Channel", "Vehicle Class"]
-
-# ordinal encoding columns
-vehicle_size_encoding = "Vehicle Size"
-
-
-# encoding vehicle column from categorical into integers using ordinal encoding because
-# large, medium, small indicates a natural order. 
-
-vehicle_dictionary = [{'col': 'Vehicle Size','mapping':{"Small":1, 
-                                                       "Medsize":2, "Large": 3}}]
-
-vehicle_encoder = ce.OrdinalEncoder(cols="Vehicle Size", mapping=vehicle_dictionary)
-
-train_encoded = vehicle_encoder.fit_transform(train_encoded)
-test_encoded = vehicle_encoder.transform(test_encoded)
-
-
-train_encoded.head()
-
-
-# encode the remainder of columns using one hot encoder. 
-
-columns_to_encode = ["Marital Status", "Policy Type", "Policy", "Sales Channel", "Vehicle Class"]
-
-# Encode columns above with one hot encoding
-# order doesn't matter in this columns situation
-
-columns_encoder = ce.OneHotEncoder(cols = columns_to_encode, use_cat_names=True)
-
-train_encoded = columns_encoder.fit_transform(train_encoded)
-test_encoded = columns_encoder.transform(test_encoded)
-
-
-
-train_encoded.head()
-
-
-# drop 
-
-
-# encode state using One Hot Encoding encoding without specifying order. 
-# come back and experiment with different encoding later. 
-
-state_encoder = ce.OneHotEncoder(cols="State", use_cat_names=True)
-
-train_encoded = state_encoder.fit_transform(train_encoded)
-test_encoded = state_encoder.transform(test_encoded)
-
-
-
-train['State'].describe()
-
-
-train_encoded.head()
-
-
-# drop response and Renew Offer Type columns for reasons listed above
-
-train_encoded = train_encoded.drop(columns=["Response", "Renew Offer Type"])
-test_encoded = test_encoded.drop(columns=["Response", "Renew Offer Type"])
-
-
-train_encoded.head()
-
-
-# change column names to something easier to pronounce
-
-train_encoded = train_encoded.rename(columns = {"State_Arizona":"Arizona", 
-                                     "State_Oregon": "Oregon",
-                                     "State_California": "California",
-                                     "State_Nevada": "Nevada",
-                                     "State_Washington": "Washington", 
-                                     "Marital Status_Married": "Married", 
-                                     "Marital Status_Divorced":"Divorced",
-                                     "Marital Status_Single": "Single",
-                                     "Policy Type_Personal Auto": "Personal Auto",
-                                     "Policy Type_Corporate Auto": "Corporate Auto",
-                                     "Policy Type_Special Auto": "Special Auto",
-                                     "Policy_Personal L3": "Personal L3", 
-                                     "Policy_Corporate L3": "Corporate L3",
-                                     "Policy_Corporate L2": "Corporate L2",
-                                     "Policy_Corporate L1": "Corporate L1",
-                                     "Policy_Personal L2": "Personal L2",
-                                     "Policy_Personal L1": "Personal L1",
-                                     "Policy_Special L1": "Special L1",
-                                     "Policy_Special L2": "Special L2",
-                                     "Policy_Special L3": "Special L3",
-                                     "Sales Channel_Call Center": "Call Center",
-                                     "Sales Channel_Agent": "Agent",
-                                     "Sales Channel_Web": "Web",
-                                     "Sales Channel_Branch": "Branch",
-                                     "Vehicle Class_Two-Door Car": "Two Door",
-                                     "Vehicle Class_SUV": "SUV",
-                                     "Vehicle Class_Sports Car": "Sports Car",
-                                     "Vehicle Class_Four-Door Car": "Four Door",
-                                     "Vehicle Class_Luxury SUV": "Luxury SUV",
-                                     "Vehicle Class_Luxury Car": "Luxury Car"})
-
-test_encoded = test_encoded.rename(columns = {"State_Arizona":"Arizona", 
-                                     "State_Oregon": "Oregon",
-                                     "State_California": "California",
-                                     "State_Nevada": "Nevada",
-                                     "State_Washington": "Washington", 
-                                     "Marital Status_Married": "Married", 
-                                     "Marital Status_Divorced":"Divorced",
-                                     "Marital Status_Single": "Single",
-                                     "Policy Type_Personal Auto": "Personal Auto",
-                                     "Policy Type_Corporate Auto": "Corporate Auto",
-                                     "Policy Type_Special Auto": "Special Auto",
-                                     "Policy_Personal L3": "Personal L3", 
-                                     "Policy_Corporate L3": "Corporate L3",
-                                     "Policy_Corporate L2": "Corporate L2",
-                                     "Policy_Corporate L1": "Corporate L1",
-                                     "Policy_Personal L2": "Personal L2",
-                                     "Policy_Personal L1": "Personal L1",
-                                     "Policy_Special L1": "Special L1",
-                                     "Policy_Special L2": "Special L2",
-                                     "Policy_Special L3": "Special L3",
-                                     "Sales Channel_Call Center": "Call Center",
-                                     "Sales Channel_Agent": "Agent",
-                                     "Sales Channel_Web": "Web",
-                                     "Sales Channel_Branch": "Branch",
-                                     "Vehicle Class_Two-Door Car": "Two Door",
-                                     "Vehicle Class_SUV": "SUV",
-                                     "Vehicle Class_Sports Car": "Sports Car",
-                                     "Vehicle Class_Four-Door Car": "Four Door",
-                                     "Vehicle Class_Luxury SUV": "Luxury SUV",
-                                     "Vehicle Class_Luxury Car": "Luxury Car"})
-
-
-train_encoded.head()
-
-
-# next week, re-factor ALL the data wrangling code and put everything in a GIANT function. 
-
-# if there is still time, work on data visualization and exploration. 

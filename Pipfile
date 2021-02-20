@@ -16,6 +16,7 @@ plotly = "*"
 jupyter = "*"
 xgboost = "*"
 shap = "*"
+joblib = "*"
 
 [requires]
 python_version = "3.7"
